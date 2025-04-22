@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 flex flex-col items-center justify-center min-h-screen p-6 text-gray-200">
+  <h1 class="text-3xl font-bold mb-8 text-center">Login</h1>
+  <div id="password-interface" class="space-y-6 w-full max-w-md">
+    <input id="username-input" type="text" placeholder="Username" class="w-full mb-4 p-3 rounded-xl bg-gray-700 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    <!-- 3x3 grid of inputs -->
+    <div class="flex justify-between space-x-4">
+      <div class="bg-gray-800 rounded-xl p-3 flex flex-col space-y-6 w-1/3">
+        <input type="text" maxlength="2" class="password-cell w-full text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input type="text" maxlength="2" class="password-cell w-full text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input type="text" maxlength="2" class="password-cell w-full text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div class="bg-gray-800 rounded-xl p-3 flex flex-col space-y-6 w-1/3">
+        <input type="text" maxlength="2" class="password-cell w-full text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input type="text" maxlength="2" class="password-cell w-full text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input type="text" maxlength="2" class="password-cell w-full text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+      <div class="bg-gray-800 rounded-xl p-3 flex flex-col space-y-6 w-1/3">
+        <input type="text" maxlength="2" class="password-cell w-full text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input type="text" maxlength="2" class="password-cell w-full text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <input type="text" maxlength="2" class="password-cell w-full text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      </div>
+    </div>
+    <input type="text" maxlength="3" id="admin-code-input" placeholder="Admin code" class="hidden w-20 mt-4 text-center bg-gray-700 text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" />
+    <div class="flex items-center space-x-4">
+      <button id="enter-button" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-10 rounded-xl transition focus:outline-none focus:ring-4 focus:ring-blue-400">
+        Enter
+      </button>
+    </div>
+  </div>
+
+  <!-- Wrong Password Popup -->
+  <div id="wrong-password-popup" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-60 hidden">
+    <div class="bg-red-700 rounded-lg p-8 text-center max-w-xs">
+      <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+      <p class="text-white text-lg font-bold mb-4">Wrong password</p>
+      <p class="text-red-200">The program will close shortly.</p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { users, admins } from './login.js';
+
+    (() => {
+      // Elements
+      const usernameInput = document.getElementById('username-input');
+      const passwordCells = Array.from(document.querySelectorAll('.password-cell'));
+      const adminCodeInput = document.getElementById('admin-code-input');
+      const enterButton = document.getElementById('enter-button');
+      const wrongPasswordPopup = document.getElementById('wrong-password-popup');
+
+      let adminPasswordEntered = false;
+
+      function getPasswordInput() {
+        return passwordCells.map(input => input.value.trim().toLowerCase()).join('');
+      }
+
+      function disableInputs(disable) {
+        usernameInput.disabled = disable;
+        passwordCells.forEach(input => input.disabled = disable);
+        adminCodeInput.disabled = disable;
+        enterButton.disabled = disable;
+      }
+
+      function showWrongPasswordPopup() {
+        wrongPasswordPopup.classList.remove('hidden');
+        setTimeout(() => {
+          wrongPasswordPopup.classList.add('hidden');
+          disableInputs(true);
+        }, 3000);
+      }
+
+      function clearInputs() {
+        usernameInput.value = '';
+        passwordCells.forEach(input => input.value = '');
+        adminCodeInput.value = '';
+      }
+
+      // Animate admin code input popup sliding down and fading in
+      function animateAdminCodeInput() {
+        adminCodeInput.classList.remove('hidden');
+        adminCodeInput.style.opacity = 0;
+        adminCodeInput.style.transform = 'translateY(-20px)';
+        let opacity = 0;
+        let translateY = -20;
+        const duration = 300; // ms
+        const interval = 15;
+        const stepOpacity = interval / duration;
+        const stepTranslate = 20 * (interval / duration);
+
+        function animate() {
+          opacity += stepOpacity;
+          translateY += stepTranslate;
+          if (opacity >= 1) {
+            opacity = 1;
+            translateY = 0;
+            adminCodeInput.style.opacity = opacity;
+            adminCodeInput.style.transform = 'translateY(0)';
+            adminCodeInput.focus();
+            return;
+          }
+          adminCodeInput.style.opacity = opacity;
+          adminCodeInput.style.transform = `translateY(${translateY}px)`;
+          setTimeout(animate, interval);
+        }
+        animate();
+      }
+
+      // Keyboard navigation and cross-input backspacing for password inputs
+      passwordCells.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          const value = e.target.value;
+          if (value.length === 2 && index < passwordCells.length - 1) {
+            passwordCells[index + 1].focus();
+          }
+        });
+
+        input.addEventListener('keydown', (e) => {
+          const key = e.key;
+          if (key === 'Backspace') {
+            if (e.target.value.length === 0 && index > 0) {
+              passwordCells[index - 1].focus();
+              e.preventDefault();
+            }
+          } else if (key === 'ArrowUp' && index > 0) {
+            passwordCells[index - 1].focus();
+            e.preventDefault();
+          } else if (key === 'ArrowDown' && index < passwordCells.length - 1) {
+            passwordCells[index + 1].focus();
+            e.preventDefault();
+          } else if (key === 'ArrowUp' && index === 0) {
+            usernameInput.focus();
+            e.preventDefault();
+          } else if (key === 'ArrowDown' && index === passwordCells.length - 1) {
+            usernameInput.focus();
+            e.preventDefault();
+          }
+        });
+      });
+
+      // Up/down arrow navigation between username and password inputs
+      usernameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+          passwordCells[0].focus();
+          e.preventDefault();
+        }
+      });
+
+      enterButton.addEventListener('click', () => {
+        if (!adminPasswordEntered) {
+          const username = usernameInput.value.trim().toLowerCase();
+          const password = getPasswordInput();
+
+          const user = users.find(u => u.username.toLowerCase() === username && u.password === password);
+          const admin = admins.find(a => a.adminname.toLowerCase() === username && a.password === password);
+
+          if (user) {
+            // Redirect to workspace.html with user type
+            window.location.href = 'workspace.html?type=user';
+          } else if (admin) {
+            // Show admin code input popup
+            animateAdminCodeInput();
+            disableInputs(false);
+            adminPasswordEntered = true;
+          } else {
+            showWrongPasswordPopup();
+          }
+        } else {
+          // Admin code input validation
+          const code = adminCodeInput.value.trim().toLowerCase();
+
+          const admin = admins.find(a => a.adminname.toLowerCase() === usernameInput.value.trim().toLowerCase());
+
+          if (admin && admin.adminCode === code) {
+            // Redirect to admin workspace
+            window.location.href = 'workspace.html?type=admin';
+          } else {
+            showWrongPasswordPopup();
+          }
+        }
+      });
+    })();
+  </script>
+  <style>
+    /* Additional styles for admin code input animation */
+    #admin-code-input {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+  </style>
+</body>
+</html>
