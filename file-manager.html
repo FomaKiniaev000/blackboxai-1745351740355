@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>File Manager</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #1f2937;
+      color: #e5e7eb;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background-color: #2d3748;
+      padding: 1rem;
+      font-weight: bold;
+      font-size: 1.5rem;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #file-manager-container {
+      flex-grow: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    #folder-list {
+      width: 250px;
+      background-color: #2d3748;
+      border-right: 1px solid #4a5568;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+    #folder-list ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    #folder-list li {
+      padding: 0.5rem 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 0.25rem;
+    }
+    #folder-list li:hover {
+      background-color: #4a5568;
+    }
+    #folder-list li.active {
+      background-color: #3182ce;
+    }
+    #file-list {
+      flex-grow: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 1rem;
+      background-color: #1a202c;
+    }
+    .file-item {
+      background-color: #2d3748;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      user-select: none;
+    }
+    .file-item:hover {
+      background-color: #4a5568;
+    }
+    .file-item i {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    #upload-area {
+      border: 2px dashed #4a5568;
+      border-radius: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+      margin: 1rem;
+      color: #a0aec0;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    #upload-area.dragover {
+      background-color: #4a5568;
+      color: #e5e7eb;
+    }
+    button {
+      background-color: #3182ce;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #2b6cb0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span>File Manager</span>
+    <button id="btn-create-folder">Create Folder</button>
+  </header>
+  <div id="file-manager-container">
+    <nav id="folder-list">
+      <ul id="folders">
+        <li class="active" data-folder="root"><i class="fas fa-folder"></i> Root</li>
+      </ul>
+    </nav>
+    <main id="file-list" tabindex="0">
+      <!-- Files and folders will be listed here -->
+    </main>
+  </div>
+  <div id="upload-area">Drag & Drop files here or click to upload</div>
+
+  <script>
+    // Simple in-memory file system structure
+    const fileSystem = {
+      root: {
+        type: 'folder',
+        children: {
+          'Documents': { type: 'folder', children: {} },
+          'Images': { type: 'folder', children: {} },
+          'Projects': { type: 'folder', children: {} },
+        }
+      }
+    };
+
+    let currentFolder = 'root';
+
+    const foldersUl = document.getElementById('folders');
+    const fileList = document.getElementById('file-list');
+    const uploadArea = document.getElementById('upload-area');
+    const btnCreateFolder = document.getElementById('btn-create-folder');
+
+    function renderFolders() {
+      foldersUl.innerHTML = '';
+      for (const folderName in fileSystem.root.children) {
+        const li = document.createElement('li');
+        li.textContent = folderName;
+        li.dataset.folder = folderName;
+        li.classList.add('folder-item');
+        if (folderName === currentFolder) {
+          li.classList.add('active');
+        }
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-folder';
+        li.prepend(icon);
+        foldersUl.appendChild(li);
+      }
+    }
+
+    function renderFiles() {
+      fileList.innerHTML = '';
+      if (currentFolder === 'root') {
+        // Show root folders as files
+        for (const folderName in fileSystem.root.children) {
+          const div = document.createElement('div');
+          div.className = 'file-item';
+          div.innerHTML = '<i class="fas fa-folder"></i><span>' + folderName + '</span>';
+          fileList.appendChild(div);
+        }
+      } else {
+        const folder = fileSystem.root.children[currentFolder];
+        if (!folder) return;
+        for (const name in folder.children) {
+          const item = folder.children[name];
+          const div = document.createElement('div');
+          div.className = 'file-item';
+          if (item.type === 'folder') {
+            div.innerHTML = '<i class="fas fa-folder"></i><span>' + name + '</span>';
+          } else {
+            div.innerHTML = '<i class="fas fa-file-alt"></i><span>' + name + '</span>';
+          }
+          fileList.appendChild(div);
+        }
+      }
+    }
+
+    function setActiveFolder(folderName) {
+      currentFolder = folderName;
+      document.querySelectorAll('#folder-list li').forEach(li => {
+        li.classList.toggle('active', li.dataset.folder === folderName);
+      });
+      renderFiles();
+    }
+
+    foldersUl.addEventListener('click', (e) => {
+      const li = e.target.closest('li');
+      if (!li) return;
+      setActiveFolder(li.dataset.folder);
+    });
+
+    btnCreateFolder.addEventListener('click', () => {
+      const folderName = prompt('Enter new folder name:');
+      if (!folderName) return;
+      if (fileSystem.root.children[folderName]) {
+        alert('Folder already exists!');
+        return;
+      }
+      fileSystem.root.children[folderName] = { type: 'folder', children: {} };
+      renderFolders();
+      setActiveFolder(folderName);
+    });
+
+    // Drag and drop upload
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      handleFilesUpload(files);
+    });
+
+    uploadArea.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.onchange = () => {
+        handleFilesUpload(input.files);
+      };
+      input.click();
+    });
+
+    function handleFilesUpload(files) {
+      if (!files.length) return;
+      const folder = fileSystem.root.children[currentFolder];
+      if (!folder) return;
+      for (const file of files) {
+        if (folder.children[file.name]) {
+          alert('File "' + file.name + '" already exists in this folder.');
+          continue;
+        }
+        folder.children[file.name] = { type: 'file', fileObject: file };
+      }
+      renderFiles();
+    }
+
+    // Initial render
+    renderFolders();
+    renderFiles();
+  </script>
+</body>
+</html>
