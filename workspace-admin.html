@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BudgetOS Admin Desktop</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Roboto', sans-serif;
+      background: url('wallpaper-1.jpg') no-repeat center center fixed;
+      background-size: cover;
+      overflow: hidden;
+      background-color: #4a1a1a; /* dark red base */
+    }
+    #desktop {
+      position: relative;
+      width: 100%;
+      height: calc(100% - 48px);
+      overflow: hidden;
+      user-select: none;
+    }
+    .desktop-icon {
+      position: absolute;
+      width: 80px;
+      text-align: center;
+      color: #fbd38d; /* light gold for contrast */
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.2s ease;
+    }
+    .desktop-icon:active {
+      cursor: grabbing;
+      transform: scale(1.1);
+      z-index: 1000;
+    }
+    .desktop-icon i {
+      font-size: 3rem;
+      margin-bottom: 0.25rem;
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.7));
+    }
+    .desktop-icon span {
+      display: block;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #taskbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 48px;
+      background-color: rgba(74, 26, 26, 0.9);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      box-sizing: border-box;
+      border-top: 1px solid #7b2c2c;
+      color: #fbd38d;
+      user-select: none;
+      z-index: 2000;
+    }
+    #taskbar-left, #taskbar-center, #taskbar-right {
+      display: flex;
+      align-items: center;
+      height: 100%;
+    }
+    #taskbar-left .logo {
+      font-weight: bold;
+      font-size: 1.25rem;
+      margin-right: 1rem;
+      cursor: default;
+      user-select: text;
+    }
+    #taskbar-center .taskbar-icon {
+      margin: 0 0.5rem;
+      cursor: pointer;
+      color: #fbd38d;
+      transition: color 0.2s ease;
+      position: relative;
+    }
+    #taskbar-center .taskbar-icon:hover {
+      color: #f6e05e;
+    }
+    #taskbar-center .taskbar-icon i {
+      font-size: 1.5rem;
+    }
+    #taskbar-right {
+      font-size: 0.875rem;
+      font-family: monospace, monospace;
+      min-width: 80px;
+      justify-content: flex-end;
+    }
+  </style>
+</head>
+<body>
+  <div id="desktop">
+    <!-- Desktop icons -->
+    <div class="desktop-icon" id="icon-file-manager" style="top: 20px; left: 20px;" title="File Manager">
+      <i class="fas fa-folder-open"></i>
+      <span>File Manager</span>
+    </div>
+    <div class="desktop-icon" id="icon-console" style="top: 20px; left: 120px;" title="Console">
+      <i class="fas fa-terminal"></i>
+      <span>Console</span>
+    </div>
+    <div class="desktop-icon" id="icon-user-manager" style="top: 20px; left: 220px;" title="User Manager">
+      <i class="fas fa-users-cog"></i>
+      <span>User Manager</span>
+    </div>
+    <div class="desktop-icon" id="icon-browser" style="top: 20px; left: 320px;" title="Browser">
+      <i class="fas fa-globe"></i>
+      <span>Browser</span>
+    </div>
+  </div>
+
+  <div id="taskbar">
+    <div id="taskbar-left">
+      <div class="logo">BudgetOS Admin</div>
+    </div>
+    <div id="taskbar-center">
+      <div class="taskbar-icon" id="taskbar-file-manager" title="File Manager">
+        <i class="fas fa-folder-open"></i>
+      </div>
+      <div class="taskbar-icon" id="taskbar-console" title="Console">
+        <i class="fas fa-terminal"></i>
+      </div>
+      <div class="taskbar-icon" id="taskbar-user-manager" title="User Manager">
+        <i class="fas fa-users-cog"></i>
+      </div>
+      <div class="taskbar-icon" id="taskbar-browser" title="Browser">
+        <i class="fas fa-globe"></i>
+      </div>
+    </div>
+    <div id="taskbar-right">
+      <div id="clock"></div>
+    </div>
+  </div>
+
+  <script>
+    // Drag and drop for desktop icons
+    const desktop = document.getElementById('desktop');
+    let draggedIcon = null;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    function onMouseDown(e) {
+      if (!e.target.closest('.desktop-icon')) return;
+      draggedIcon = e.target.closest('.desktop-icon');
+      const rect = draggedIcon.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      draggedIcon.style.zIndex = 1000;
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+      e.preventDefault();
+    }
+
+    function onMouseMove(e) {
+      if (!draggedIcon) return;
+      let x = e.clientX - offsetX;
+      let y = e.clientY - offsetY;
+      // Keep inside desktop bounds
+      const desktopRect = desktop.getBoundingClientRect();
+      x = Math.max(0, Math.min(x, desktopRect.width - draggedIcon.offsetWidth));
+      y = Math.max(0, Math.min(y, desktopRect.height - draggedIcon.offsetHeight));
+      draggedIcon.style.left = x + 'px';
+      draggedIcon.style.top = y + 'px';
+    }
+
+    function onMouseUp(e) {
+      if (!draggedIcon) return;
+      draggedIcon.style.zIndex = '';
+      draggedIcon = null;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+
+    desktop.addEventListener('mousedown', onMouseDown);
+
+    // Taskbar clock
+    const clock = document.getElementById('clock');
+    function updateClock() {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      clock.textContent = `${hours}:${minutes}:${seconds}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Open apps on desktop icon or taskbar icon click
+    function openApp(url, name) {
+      window.open(url, name, 'width=800,height=600');
+    }
+
+    document.getElementById('icon-file-manager').addEventListener('dblclick', () => openApp('file-manager.html', 'File Manager'));
+    document.getElementById('taskbar-file-manager').addEventListener('click', () => openApp('file-manager.html', 'File Manager'));
+
+    document.getElementById('icon-console').addEventListener('dblclick', () => openApp('console-app.html', 'Console'));
+    document.getElementById('taskbar-console').addEventListener('click', () => openApp('console-app.html', 'Console'));
+
+    document.getElementById('icon-user-manager').addEventListener('dblclick', () => openApp('user-manager.html', 'User Manager'));
+    document.getElementById('taskbar-user-manager').addEventListener('click', () => openApp('user-manager.html', 'User Manager'));
+
+    document.getElementById('icon-browser').addEventListener('dblclick', () => openApp('https://www.google.com', 'Browser'));
+    document.getElementById('taskbar-browser').addEventListener('click', () => openApp('https://www.google.com', 'Browser'));
+  </script>
+</body>
+</html>
