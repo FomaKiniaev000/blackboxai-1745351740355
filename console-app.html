@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Console App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Roboto Mono', monospace;
+      background-color: #1f2937;
+      color: #e5e7eb;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background-color: #2d3748;
+      padding: 1rem;
+      font-weight: bold;
+      font-size: 1.5rem;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #console-output {
+      flex-grow: 1;
+      background-color: #1a202c;
+      padding: 1rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-size: 1rem;
+    }
+    #console-input {
+      background-color: #2d3748;
+      border: none;
+      color: #e5e7eb;
+      padding: 0.75rem 1rem;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 1rem;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span>Console</span>
+    <button id="btn-clear">Clear</button>
+  </header>
+  <div id="console-output"></div>
+  <input type="text" id="console-input" placeholder="Type a command and press Enter" autocomplete="off" autofocus />
+
+  <script>
+    const consoleOutput = document.getElementById('console-output');
+    const consoleInput = document.getElementById('console-input');
+    const btnClear = document.getElementById('btn-clear');
+
+    function appendOutput(text) {
+      consoleOutput.textContent += text + '\\n';
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+
+    consoleInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const command = consoleInput.value.trim();
+        if (command) {
+          appendOutput('> ' + command);
+          // Simple command handling placeholder
+          if (command === 'help') {
+            appendOutput('Available commands: help, echo, clear');
+          } else if (command.startsWith('echo ')) {
+            appendOutput(command.slice(5));
+          } else if (command === 'clear') {
+            consoleOutput.textContent = '';
+          } else {
+            appendOutput('Command not found: ' + command);
+          }
+          consoleInput.value = '';
+        }
+      }
+    });
+
+    btnClear.addEventListener('click', () => {
+      consoleOutput.textContent = '';
+      consoleInput.focus();
+    });
+
+    // Initial welcome message
+    appendOutput('Welcome to the Console App!');
+    appendOutput('Type "help" for available commands.');
+  </script>
+</body>
+</html>
